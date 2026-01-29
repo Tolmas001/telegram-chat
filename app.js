@@ -216,6 +216,31 @@ async function handleAuth(e) {
             });
 
             currentUser = data.user;
+
+            // Upload profile image if selected
+            if (profileImage && profileImage.type.startsWith('image/')) {
+                try {
+                    const reader = new FileReader();
+                    const avatarData = await new Promise((resolve, reject) => {
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = () => reject(new Error('Rasm o\'qishda xatolik'));
+                        reader.readAsDataURL(profileImage);
+                    });
+
+                    await apiRequest('/users/profile', {
+                        method: 'PUT',
+                        body: JSON.stringify({ avatar: avatarData })
+                    });
+
+                    // Refresh user data
+                    const updatedUser = await apiRequest('/auth/me');
+                    currentUser = updatedUser.user;
+                } catch (avatarError) {
+                    console.error('Avatar upload error:', avatarError);
+                    // Continue without avatar
+                }
+            }
+
             showApp();
         } else {
             // Login
