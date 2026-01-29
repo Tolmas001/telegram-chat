@@ -1,5 +1,14 @@
-// API Base URL
-const API_URL = 'http://localhost:3000/api';
+// API Base URL - auto-detect based on device
+const getApiUrl = () => {
+    // Get current hostname
+    const hostname = window.location.hostname;
+    // If accessed via IP or not localhost, use current host
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        return `${window.location.protocol}//${hostname}:3000/api`;
+    }
+    return 'http://localhost:3000/api';
+};
+const API_URL = getApiUrl();
 
 // State
 let currentUser = null;
