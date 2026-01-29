@@ -8,6 +8,43 @@ let isRegistering = false;
 let currentFile = null;
 let currentFilePreview = null;
 
+// Compress image to reduce size
+async function compressImage(dataUrl, maxWidth = 200, maxHeight = 200, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Calculate new dimensions maintaining aspect ratio
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Compress to JPEG with reduced quality
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedDataUrl);
+        };
+        img.onerror = () => reject(new Error('Rasmni qayta ishlashda xatolik'));
+        img.src = dataUrl;
+    });
+}
+
 // Mobile detection
 function isMobile() {
     return window.innerWidth <= 480;
@@ -230,9 +267,12 @@ async function handleAuth(e) {
                         reader.readAsDataURL(profileImage);
                     });
 
+                    // Compress image before saving
+                    const compressedAvatar = await compressImage(avatarData);
+
                     await apiRequest('/users/profile', {
                         method: 'PUT',
-                        body: JSON.stringify({ avatar: avatarData })
+                        body: JSON.stringify({ avatar: compressedAvatar })
                     });
 
                     // Refresh user data
