@@ -685,12 +685,19 @@ async function saveProfile() {
     try {
         const updates = { name: newName };
         if (newImage) {
-            // Convert image to base64
-            const reader = new FileReader();
-            updates.avatar = await new Promise((resolve) => {
-                reader.onload = (e) => resolve(e.target.result);
-                reader.readAsDataURL(newImage);
-            });
+            // Check if it's an image
+            if (newImage.type.startsWith('image/')) {
+                // Convert image to base64
+                const reader = new FileReader();
+                updates.avatar = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(newImage);
+                });
+            } else {
+                // For non-image files, use default avatar
+                alert('Iltimos, rasm fayli tanlang!');
+                return;
+            }
         }
 
         const data = await apiRequest('/users/profile', {
