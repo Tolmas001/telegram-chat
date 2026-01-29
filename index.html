@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Chat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Auth Section -->
+    <div id="auth-section" class="container">
+        <div class="auth-box">
+            <h2 id="auth-title">Kirish</h2>
+            <form id="auth-form">
+                <input type="text" id="username" placeholder="Foydalanuvchi nomi" required>
+                <input type="password" id="password" placeholder="Parol" required>
+                <input type="text" id="full-name" placeholder="To'liq ism">
+                <input type="file" id="profile-image" accept="image/*">
+                <button type="submit" id="auth-btn">Kirish</button>
+            </form>
+            <p id="auth-switch">
+                <span id="auth-toggle">Ro'yxatdan o'tish</span> uchun bosing
+            </p>
+        </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="app-section" class="container hidden">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div id="user-info">
+                <img id="current-user-avatar" src="" alt="Avatar">
+                <div id="current-user-details">
+                    <span id="current-user-name"></span>
+                    <span id="current-user-status">Online</span>
+                </div>
+            </div>
+
+            <div id="search-box">
+                <input type="text" id="search-input" placeholder="Qidirish...">
+            </div>
+
+            <div id="chat-list">
+                <!-- Chat list will be populated here -->
+            </div>
+
+            <div id="sidebar-actions">
+                <button id="create-group-btn" class="action-btn">Guruh yaratish</button>
+                <button id="add-user-btn" class="action-btn">Foydalanuvchi qo'shish</button>
+            </div>
+
+            <div id="bottom-actions">
+                <button id="profile-btn" class="action-btn">Profil</button>
+                <button id="logout-btn" class="action-btn">Chiqish</button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chat-area">
+            <div id="chat-header">
+                <div id="chat-info">
+                    <button id="back-btn" class="back-btn" style="display:none;">◀</button>
+                    <img id="chat-avatar" src="" alt="Avatar">
+                    <div id="chat-details">
+                        <span id="chat-name"></span>
+                        <span id="chat-status"></span>
+                    </div>
+                </div>
+                <div id="chat-actions">
+                    <button id="edit-chat-btn" class="icon-btn">✏️</button>
+                    <button id="delete-chat-btn" class="icon-btn">🗑️</button>
+                </div>
+            </div>
+
+            <div id="message-search">
+                <input type="text" id="message-search-input" placeholder="Xabarlarni qidirish...">
+                <button id="message-search-btn" class="icon-btn">🔍</button>
+                <button id="message-search-close" class="icon-btn">✕</button>
+            </div>
+
+            <div id="messages-container">
+                <div id="messages">
+                    <!-- Messages will be populated here -->
+                </div>
+            </div>
+
+            <div id="message-input-area">
+                <button id="attach-btn" class="icon-btn">📎</button>
+                <input type="file" id="file-input" style="display:none" accept="image/*,.pdf,.doc,.docx">
+                <input type="text" id="message-input" placeholder="Xabar yozing...">
+                <button id="send-btn" class="icon-btn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="hidden">
+        <!-- Create Group Modal -->
+        <div id="create-group-modal" class="modal hidden">
+            <h3>Guruh yaratish</h3>
+            <input type="text" id="group-name" placeholder="Guruh nomi" required>
+            <input type="file" id="group-image" accept="image/*">
+            <div id="group-members">
+                <!-- User list for group creation -->
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-group-btn" class="btn secondary">Bekor qilish</button>
+                <button id="create-group-submit-btn" class="btn primary">Yaratish</button>
+            </div>
+        </div>
+
+        <!-- Add User Modal -->
+        <div id="add-user-modal" class="modal hidden">
+            <h3>Foydalanuvchi qo'shish</h3>
+            <div id="available-users">
+                <!-- Available users list -->
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-add-user-btn" class="btn secondary">Bekor qilish</button>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div id="profile-modal" class="modal hidden">
+            <h3>Profil</h3>
+            <img id="profile-avatar" src="" alt="Avatar">
+            <input type="file" id="edit-profile-image" accept="image/*">
+            <input type="text" id="edit-profile-name" placeholder="Ism">
+            <div class="modal-actions">
+                <button id="cancel-profile-btn" class="btn secondary">Bekor qilish</button>
+                <button id="save-profile-btn" class="btn primary">Saqlash</button>
+            </div>
+        </div>
+
+        <!-- Edit Group Modal -->
+        <div id="edit-group-modal" class="modal hidden">
+            <h3>Guruh tahrirlash</h3>
+            <img id="group-avatar-preview" src="" alt="Guruh rasmi">
+            <input type="file" id="edit-group-image" accept="image/*">
+            <input type="text" id="edit-group-name" placeholder="Guruh nomi">
+            <div id="group-members-list">
+                <h4>A'zolar:</h4>
+                <div id="edit-group-members"></div>
+                <button id="add-group-member-btn" class="action-item" style="margin-top: 10px;">➕ A'zo qo'shish</button>
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-group-edit-btn" class="btn secondary">Bekor qilish</button>
+                <button id="save-group-btn" class="btn primary">Saqlash</button>
+            </div>
+        </div>
+
+        <!-- Edit Message Modal -->
+        <div id="edit-message-modal" class="modal hidden">
+            <h3>Xabarni tahrirlash</h3>
+            <textarea id="edit-message-text"></textarea>
+            <div class="modal-actions">
+                <button id="cancel-edit-btn" class="btn secondary">Bekor qilish</button>
+                <button id="save-edit-btn" class="btn primary">Saqlash</button>
+            </div>
+        </div>
+
+        <!-- Message Actions Modal -->
+        <div id="message-actions-modal" class="modal hidden">
+            <h3>Xabar</h3>
+            <div id="message-actions-list">
+                <button id="action-edit-msg" class="action-item">✏️ Tahrirlash</button>
+                <button id="action-delete-msg" class="action-item">🗑️ O'chirish</button>
+            </div>
+            <div class="modal-actions">
+                <button id="close-message-actions" class="btn secondary">Bekor qilish</button>
+            </div>
+        </div>
+
+        <!-- Add User to Group Modal -->
+        <div id="add-group-user-modal" class="modal hidden">
+            <h3>A'zo qo'shish</h3>
+            <div id="group-available-users"></div>
+            <div class="modal-actions">
+                <button id="cancel-add-group-user-btn" class="btn secondary">Bekor qilish</button>
+                <button id="save-group-users-btn" class="btn primary">Qo'shish</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
