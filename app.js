@@ -217,6 +217,9 @@ async function handleAuth(e) {
 
             currentUser = data.user;
 
+            // Small delay to ensure cookie is set
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             // Upload profile image if selected
             if (profileImage && profileImage.type.startsWith('image/')) {
                 try {

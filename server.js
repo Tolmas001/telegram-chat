@@ -23,7 +23,11 @@ const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 
 // Middleware
 app.use(cors({
-    origin: true,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        return callback(null, origin);
+    },
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -141,6 +145,27 @@ app.post('/api/auth/register', async (req, res) => {
         };
 
         users.push(newUser);
+        saveData();
+
+        // Add new user to global chat
+        let globalChat = chats.find(c => c.name === 'Barcha Foydalanuvchilar' && c.type === 'group');
+        if (!globalChat) {
+            // Create global chat with all existing users + new user
+            globalChat = {
+                id: Date.now(),
+                type: 'group',
+                name: 'Barcha Foydalanuvchilar',
+                participants: users.map(u => u.id),
+                avatar: '',
+                createdAt: new Date().toISOString()
+            };
+            chats.push(globalChat);
+        } else {
+            // Add new user to existing global chat
+            if (!globalChat.participants.includes(newUser.id)) {
+                globalChat.participants.push(newUser.id);
+            }
+        }
         saveData();
 
         const token = generateToken(newUser.id);
