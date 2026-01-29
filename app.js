@@ -689,12 +689,13 @@ async function saveProfile() {
             if (newImage.type.startsWith('image/')) {
                 // Convert image to base64
                 const reader = new FileReader();
-                updates.avatar = await new Promise((resolve) => {
+                updates.avatar = await new Promise((resolve, reject) => {
                     reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Rasm o\'qishda xatolik'));
                     reader.readAsDataURL(newImage);
                 });
             } else {
-                // For non-image files, use default avatar
+                // For non-image files, show alert
                 alert('Iltimos, rasm fayli tanlang!');
                 return;
             }
@@ -709,7 +710,8 @@ async function saveProfile() {
         updateUserInfo();
         closeModals();
     } catch (error) {
-        alert(error.message);
+        alert('Xatolik: ' + (error.message || 'Noma\'lum xatolik'));
+        console.error('Profile save error:', error);
     }
 }
 

@@ -17,7 +17,7 @@
                 <input type="text" id="username" placeholder="Foydalanuvchi nomi" required>
                 <input type="password" id="password" placeholder="Parol" required>
                 <input type="text" id="full-name" placeholder="To'liq ism">
-                <input type="file" id="profile-image" accept="image/heic,image/heif,image/webp,image/*">
+                <input type="file" id="profile-image" accept="image/*">
                 <button type="submit" id="auth-btn">Kirish</button>
             </form>
             <p id="auth-switch">
@@ -101,7 +101,7 @@
         <div id="create-group-modal" class="modal hidden">
             <h3>Guruh yaratish</h3>
             <input type="text" id="group-name" placeholder="Guruh nomi" required>
-            <input type="file" id="group-image" accept="image/heic,image/heif,image/webp,image/*">
+            <input type="file" id="group-image" accept="image/*">
             <div id="group-members">
                 <!-- User list for group creation -->
             </div>
@@ -126,7 +126,7 @@
         <div id="profile-modal" class="modal hidden">
             <h3>Profil</h3>
             <img id="profile-avatar" src="" alt="Avatar">
-            <input type="file" id="edit-profile-image" accept="image/heic,image/heif,image/webp,image/*">
+            <input type="file" id="edit-profile-image" accept="image/*">
             <input type="text" id="edit-profile-name" placeholder="Ism">
             <div class="modal-actions">
                 <button id="cancel-profile-btn" class="btn secondary">Bekor qilish</button>
@@ -138,7 +138,7 @@
         <div id="edit-group-modal" class="modal hidden">
             <h3>Guruh tahrirlash</h3>
             <img id="group-avatar-preview" src="" alt="Guruh rasmi">
-            <input type="file" id="edit-group-image" accept="image/heic,image/heif,image/webp,image/*">
+            <input type="file" id="edit-group-image" accept="image/*">
             <input type="text" id="edit-group-name" placeholder="Guruh nomi">
             <div id="group-members-list">
                 <h4>A'zolar:</h4>
