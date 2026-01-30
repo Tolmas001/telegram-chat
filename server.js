@@ -527,7 +527,7 @@ async function loadSampleData() {
 loadSampleData();
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Telegram Chat Server running on http://localhost:${PORT}`);
     console.log(`📁 Data saved to: ${DATA_DIR}`);
     console.log(`   - ${USERS_FILE}`);
