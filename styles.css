@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #88a4c8;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     height: 100vh;
     overflow: hidden;
     color: #000;
@@ -15,6 +15,8 @@ body {
 .container {
     display: flex;
     height: 100vh;
+    padding: 10px;
+    gap: 0;
 }
 
 .hidden {
@@ -98,10 +100,14 @@ body {
 /* Sidebar */
 #sidebar {
     width: 380px;
-    background: #ffffff;
-    border-right: 1px solid #dfe6e9;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
     display: flex;
     flex-direction: column;
+    border-radius: 20px;
+    margin: 10px;
+    height: calc(100vh - 20px);
 }
 
 #user-info {
@@ -260,7 +266,12 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #94a2b2;
+    background: rgba(148, 162, 178, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    margin: 10px 10px 10px 0;
+    height: calc(100vh - 20px);
+    overflow: hidden;
 }
 
 #chat-header {
@@ -352,7 +363,8 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    background: #94a2b2;
+    background: rgba(148, 162, 178, 0.5);
+    backdrop-filter: blur(5px);
 }
 
 #messages {
@@ -766,18 +778,26 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .container {
+        padding: 0;
+    }
+
     #sidebar {
         width: 100%;
         position: absolute;
         height: 100%;
         z-index: 10;
         transition: transform 0.3s ease;
+        margin: 0;
+        border-radius: 0;
     }
 
     #chat-area {
         width: 100%;
         position: absolute;
         height: 100%;
+        margin: 0;
+        border-radius: 0;
     }
 
     .hidden-mobile {
@@ -932,7 +952,7 @@ body {
 
 /* Dark Mode */
 body.dark-mode {
-    background-color: #1a1a2e;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
     color: #e0e0e0;
 }
 
@@ -961,8 +981,9 @@ body.dark-mode #auth-switch {
 }
 
 body.dark-mode #sidebar {
-    background: #16213e;
-    border-right-color: #0f3460;
+    background: rgba(22, 33, 62, 0.85);
+    backdrop-filter: blur(10px);
+    border-right-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode #chat-list,
@@ -1004,7 +1025,8 @@ body.dark-mode .action-btn:hover {
 }
 
 body.dark-mode #chat-area {
-    background: #1a1a2e;
+    background: rgba(26, 26, 46, 0.85);
+    backdrop-filter: blur(10px);
 }
 
 body.dark-mode #chat-header {
@@ -1018,7 +1040,7 @@ body.dark-mode #chat-name {
 
 body.dark-mode #messages-container,
 body.dark-mode #messages {
-    background: #1a1a2e;
+    background: rgba(26, 26, 46, 0.5);
 }
 
 body.dark-mode .message.received {
