@@ -12,7 +12,7 @@ body {
     animation: gradientBG 15s ease infinite;
     height: 100vh;
     overflow: hidden;
-    color: #000;
+    color: #fff;
 }
 
 @keyframes gradientBG {
@@ -117,7 +117,12 @@ body {
     border-radius: 16px;
     font-size: 16px;
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.auth-box input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .auth-box input:focus {
@@ -148,7 +153,7 @@ body {
 #auth-switch {
     text-align: center;
     margin-top: 24px;
-    color: #666;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 #auth-toggle {
@@ -211,7 +216,12 @@ body {
     border-radius: 20px;
     font-size: 15px;
     transition: all 0.3s;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+#search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 #search-input:focus {
@@ -265,6 +275,7 @@ body {
 .chat-item-last-message {
     font-size: 13px;
     opacity: 0.7;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .chat-item-meta {
@@ -386,7 +397,12 @@ body {
     border: none;
     border-radius: 20px;
     font-size: 14px;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+#message-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 #message-search-input:focus {
@@ -439,9 +455,10 @@ body {
 .message.received {
     align-self: flex-start;
     background: rgba(255, 255, 255, 0.85);
-    color: #1a1a1a;
+    color: #fff;
     border-bottom-left-radius: 8px;
     backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .message-sender {
@@ -515,7 +532,12 @@ body {
     border-radius: 24px;
     font-size: 15px;
     transition: all 0.3s;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+#message-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 #message-input:focus {
@@ -599,7 +621,13 @@ body {
     border-radius: 14px;
     font-size: 15px;
     transition: all 0.3s;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.modal input[type="text"]::placeholder,
+.modal textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .modal input[type="text"]:focus,
