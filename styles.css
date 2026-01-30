@@ -447,9 +447,10 @@ body {
 
 .message.sent {
     align-self: flex-end;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: rgba(0, 0, 0, 0.8);
     color: white;
     border-bottom-right-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .message.received {
