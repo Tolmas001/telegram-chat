@@ -118,7 +118,8 @@ body {
     font-size: 16px;
     transition: all 0.3s ease;
     background: rgba(255, 255, 255, 0.95);
-    color: #1a1a1a;
+    color: #667eea;
+    font-weight: 600;
 }
 
 .auth-box input::placeholder {
@@ -534,7 +535,8 @@ body {
     font-size: 15px;
     transition: all 0.3s;
     background: rgba(255, 255, 255, 0.95);
-    color: #1a1a1a;
+    color: #667eea;
+    font-weight: 500;
 }
 
 #message-input::placeholder {
