@@ -169,6 +169,7 @@ function setupEventListeners() {
     document.getElementById('create-group-btn').addEventListener('click', showCreateGroupModal);
     document.getElementById('add-user-btn').addEventListener('click', showAddUserModal);
     document.getElementById('profile-btn').addEventListener('click', showProfileModal);
+    document.getElementById('dark-mode-btn').addEventListener('click', toggleDarkMode);
     document.getElementById('logout-btn').addEventListener('click', logout);
 
     // Modal buttons
@@ -319,6 +320,11 @@ function toggleAuthMode() {
 
     document.getElementById('full-name').parentElement.style.display = isRegistering ? 'block' : 'none';
     document.getElementById('profile-image').parentElement.style.display = isRegistering ? 'block' : 'none';
+
+    // Clear form fields
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('full-name').value = '';
 }
 
 // Show main app
@@ -1072,6 +1078,8 @@ async function deleteMessage(messageId) {
 
 // Logout
 async function logout() {
+    if (!confirm('Chiqishni xohlaysizmi?')) return;
+
     try {
         await apiRequest('/auth/logout', { method: 'POST' });
     } catch (error) {
@@ -1083,10 +1091,20 @@ async function logout() {
 
     authSection.classList.remove('hidden');
     appSection.classList.add('hidden');
+}
 
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('full-name').value = '';
+// Toggle dark mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    document.getElementById('dark-mode-btn').textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+}
+
+// Initialize dark mode from localStorage
+if (localStorage.getItem('darkMode') === 'enabled') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('dark-mode-btn').textContent = '☀️';
 }
 
 // Initialize
