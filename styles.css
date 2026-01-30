@@ -798,7 +798,7 @@ body.dark-mode .message-sender {
 }
 
 body.dark-mode #message-input {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.9);
     color: #1a1a1a;
 }
 
@@ -808,12 +808,12 @@ body.dark-mode #message-input:focus {
 }
 
 body.dark-mode #search-input {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.9);
     color: #1a1a1a;
 }
 
 body.dark-mode #message-search-input {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.9);
     color: #1a1a1a;
 }
 
