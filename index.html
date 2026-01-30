@@ -90,8 +90,20 @@
             <div id="message-input-area">
                 <button id="attach-btn" class="icon-btn">📎</button>
                 <input type="file" id="file-input" style="display:none" accept="image/*,.pdf,.doc,.docx">
+                <button id="emoji-btn" class="icon-btn">😊</button>
                 <input type="text" id="message-input" placeholder="Xabar yozing...">
                 <button id="send-btn" class="icon-btn">➤</button>
+            </div>
+
+            <!-- Emoji Picker -->
+            <div id="emoji-picker" class="hidden">
+                <div class="emoji-category">
+                    <button class="emoji-category-btn active" data-category="smile">😀</button>
+                    <button class="emoji-category-btn" data-category="gest">👋</button>
+                    <button class="emoji-category-btn" data-category="love">❤️</button>
+                    <button class="emoji-category-btn" data-category="obj">🎯</button>
+                </div>
+                <div id="emoji-grid"></div>
             </div>
         </div>
     </div>

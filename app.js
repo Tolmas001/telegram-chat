@@ -162,6 +162,25 @@ function setupEventListeners() {
     });
     document.getElementById('file-input').addEventListener('change', handleFileSelect);
 
+    // Emoji picker
+    document.getElementById('emoji-btn').addEventListener('click', toggleEmojiPicker);
+    document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.emoji-category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadEmojis(btn.dataset.category);
+        });
+    });
+
+    // Close emoji picker when clicking outside
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('emoji-picker');
+        const btn = document.getElementById('emoji-btn');
+        if (!picker.contains(e.target) && !btn.contains(e.target)) {
+            picker.classList.add('hidden');
+        }
+    });
+
     // Search
     searchInput.addEventListener('input', filterChats);
 
@@ -1105,6 +1124,40 @@ function toggleDarkMode() {
 if (localStorage.getItem('darkMode') === 'enabled') {
     document.body.classList.add('dark-mode');
     document.getElementById('dark-mode-btn').textContent = '☀️';
+}
+
+// ==================== EMOJI PICKER ====================
+const emojis = {
+    smile: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶'],
+    gest: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '🦾'],
+    love: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '♥️', '💌', '👀', '👁️', '👅', '👄', '🥰', '😘', '😗', '😙', '😚'],
+    obj: ['🎯', '🎨', '🎭', '🎪', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎲', '♟️', '🎯', '🎳', '🎮', '🎰', '🧩']
+};
+
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    picker.classList.toggle('hidden');
+    if (!picker.classList.contains('hidden')) {
+        loadEmojis('smile');
+        document.querySelector('.emoji-category-btn[data-category="smile"]').classList.add('active');
+    }
+}
+
+function loadEmojis(category) {
+    const grid = document.getElementById('emoji-grid');
+    grid.innerHTML = '';
+
+    emojis[category].forEach(emoji => {
+        const item = document.createElement('div');
+        item.className = 'emoji-item';
+        item.textContent = emoji;
+        item.addEventListener('click', () => {
+            const input = document.getElementById('message-input');
+            input.value += emoji;
+            input.focus();
+        });
+        grid.appendChild(item);
+    });
 }
 
 // Initialize
