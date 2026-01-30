@@ -374,6 +374,7 @@ function updateUserInfo() {
 async function renderChatList(filter = '') {
     try {
         const chats = await apiRequest('/chats');
+        const messages = await apiRequest('/messages');
 
         chatList.innerHTML = '';
 
@@ -389,15 +390,22 @@ async function renderChatList(filter = '') {
 
             if (filter && !chatName.toLowerCase().includes(filter.toLowerCase())) return;
 
+            // Get last message for this chat
+            const chatMessages = messages.filter(m => m.chatId === chat.id);
+            const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
+            const lastMessageTime = lastMessage ? formatMessageTime(lastMessage.timestamp) : '';
+            const lastMessageText = lastMessage ? (lastMessage.text || 'Rasm') : 'Xabar yo\'q';
+
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item' + (currentChat?.id === chat.id ? ' active' : '');
             chatItem.innerHTML = `
                 <img src="${getAvatarUrl(chatAvatar)}" alt="${chatName}" class="chat-item-avatar" onerror="this.src='${getAvatarUrl(null)}'">
                 <div class="chat-item-info">
                     <div class="chat-item-name">${chatName}</div>
-                    <div class="chat-item-last-message">${chat.type === 'group' ? 'Guruh' : 'Suhbat'}</div>
+                    <div class="chat-item-last-message">${lastMessageText}</div>
                 </div>
                 <div class="chat-item-meta">
+                    ${lastMessageTime ? `<div class="chat-item-time">${lastMessageTime}</div>` : ''}
                     ${chat.type === 'private' && otherUser?.online ? '<div class="chat-item-online"></div>' : ''}
                 </div>
             `;
@@ -407,6 +415,26 @@ async function renderChatList(filter = '') {
     } catch (error) {
         console.error('Error loading chats:', error);
     }
+}
+
+// Format message time
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (date.toDateString() === now.toDateString()) {
+        if (diffMins < 1) return 'hozir';
+        if (diffMins < 60) return diffMins + ' daq';
+        return diffHours + ' soat';
+    }
+    if (date.toDateString() === new Date(now - 86400000).toDateString()) {
+        return 'kecha';
+    }
+    return date.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' });
 }
 
 // Open chat
