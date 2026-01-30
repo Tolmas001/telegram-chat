@@ -93,11 +93,34 @@
 
             <div id="message-input-area">
                 <button id="voice-btn" class="icon-btn" title="Ovoz xabar">🎤</button>
-                <button id="attach-btn" class="icon-btn">📎</button>
-                <input type="file" id="file-input" style="display:none" accept="image/*,.pdf,.doc,.docx,.mp3,.wav,.ogg">
+                <button id="attach-btn" class="icon-btn" title="Fayl">📎</button>
+                <input type="file" id="file-input" style="display:none"
+                    accept="image/*,.pdf,.doc,.docx,.mp3,.wav,.ogg,video/*">
                 <button id="emoji-btn" class="icon-btn">😊</button>
+                <button id="location-btn" class="icon-btn" title="Joylashuv" onclick="shareLocation()">📍</button>
+                <button id="contact-btn" class="icon-btn" title="Kontakt" onclick="shareContact()">👤</button>
                 <input type="text" id="message-input" placeholder="Xabar yozing...">
                 <button id="send-btn" class="icon-btn">➤</button>
+            </div>
+
+            <!-- Quick Actions Bar -->
+            <div id="quick-actions"
+                style="display: flex; gap: 8px; padding: 10px 20px; overflow-x: auto; background: rgba(255,255,255,0.1);">
+                <button class="quick-action-btn"
+                    style="padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; cursor: pointer; white-space: nowrap;"
+                    onclick="showCreatePollModal()">📊 So'rovnoma</button>
+                <button class="quick-action-btn"
+                    style="padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; cursor: pointer; white-space: nowrap;"
+                    onclick="showStoriesModal()">📱 Stories</button>
+                <button class="quick-action-btn"
+                    style="padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; cursor: pointer; white-space: nowrap;"
+                    onclick="showAutoDeleteModal()">⏰ Auto-o'chirish</button>
+                <button class="quick-action-btn"
+                    style="padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; cursor: pointer; white-space: nowrap;"
+                    onclick="showAdvancedSearch()">🔍 Qidirish</button>
+                <button class="quick-action-btn"
+                    style="padding: 8px 16px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; cursor: pointer; white-space: nowrap;"
+                    onclick="showAdminControls()">⚙️ Boshqaruv</button>
             </div>
 
             <!-- Voice Recording UI -->

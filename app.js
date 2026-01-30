@@ -1840,3 +1840,387 @@ function endCall() {
 
 // Initialize
 init();
+// ==================== STORIES FEATURE ====================
+
+let currentStory = null;
+let storyViewers = {};
+
+async function showStoriesModal() {
+    document.getElementById('modal-overlay').classList.remove('hidden');
+
+    try {
+        const users = await apiRequest('/users');
+        const chats = await apiRequest('/chats');
+
+        let modalHtml = `
+            <div class="modal" style="max-width: 500px;">
+                <h3>Stories</h3>
+                <div class="stories-grid">
+        `;
+
+        // Add current user's story
+        modalHtml += `
+            <div class="story-item current-user" onclick="createStory()">
+                <div class="story-avatar">➕</div>
+                <div class="story-name">Yangi story</div>
+            </div>
+        `;
+
+        // Add other users' stories
+        users.filter(u => u.id !== currentUser.id).forEach(user => {
+            modalHtml += `
+                <div class="story-item" onclick="viewStory(${user.id}, '${user.name}')">
+                    <div class="story-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        ${user.name.charAt(0)}
+                    </div>
+                    <div class="story-name">${user.name}</div>
+                </div>
+            `;
+        });
+
+        modalHtml += `
+                </div>
+                <div class="modal-actions">
+                    <button class="btn secondary" onclick="closeModals()">Yopish</button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('modal-overlay').innerHTML = modalHtml;
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+function createStory() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            const data = ev.target.result;
+
+            // Save story (in a real app, this would be stored on server)
+            if (!currentUser.stories) currentUser.stories = [];
+            currentUser.stories.push({
+                id: Date.now(),
+                type: file.type.startsWith('video') ? 'video' : 'image',
+                data: data,
+                timestamp: new Date().toISOString(),
+                views: []
+            });
+
+            alert('Story yaratildi!');
+            closeModals();
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
+function viewStory(userId, userName) {
+    alert(`${userName}ning storysi ko'rilmoqda...`);
+    // In a full implementation, this would show the story with swipe functionality
+}
+
+// ==================== POLLS FEATURE ====================
+
+function showCreatePollModal() {
+    if (!currentChat || currentChat.type !== 'group') {
+        alert('Polllar faqat guruhlarda yaratiladi!');
+        return;
+    }
+
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-overlay').innerHTML = `
+        <div class="modal">
+            <h3>So'rovnomа yaratish</h3>
+            <input type="text" id="poll-question" placeholder="Savol" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px;">
+            <input type="text" id="poll-option-1" placeholder="1-variant" style="width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 12px;">
+            <input type="text" id="poll-option-2" placeholder="2-variant" style="width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 12px;">
+            <input type="text" id="poll-option-3" placeholder="3-variant (ixtiyoriy)" style="width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 12px;">
+            <label style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                <input type="checkbox" id="poll-anonymous"> Anonymous so'rovnomа
+            </label>
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModals()">Bekor qilish</button>
+                <button class="btn primary" onclick="createPoll()">Yaratish</button>
+            </div>
+        </div>
+    `;
+}
+
+async function createPoll() {
+    const question = document.getElementById('poll-question').value.trim();
+    const options = [
+        document.getElementById('poll-option-1').value.trim(),
+        document.getElementById('poll-option-2').value.trim(),
+        document.getElementById('poll-option-3').value.trim()
+    ].filter(o => o);
+
+    if (!question || options.length < 2) {
+        alert('Kamida savol va 2 ta variant kiriting!');
+        return;
+    }
+
+    try {
+        await apiRequest(`/chats/${currentChat.id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({
+                text: '',
+                attachment: {
+                    type: 'poll',
+                    question: question,
+                    options: options,
+                    anonymous: document.getElementById('poll-anonymous').checked,
+                    votes: {},
+                    totalVotes: 0
+                }
+            })
+        });
+
+        closeModals();
+        renderMessages();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+function votePoll(messageId, optionIndex) {
+    // Poll voting logic
+    alert('Siz ovoz berdingiz!');
+}
+
+// ==================== MESSAGE SEARCH WITH FILTERS ====================
+
+function showAdvancedSearch() {
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-overlay').innerHTML = `
+        <div class="modal">
+            <h3>Qidirish</h3>
+            <input type="text" id="search-term" placeholder="Matn kiriting..." style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px;">
+            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                <label><input type="checkbox" id="search-text" checked> Matn</label>
+                <label><input type="checkbox" id="search-images"> Rasmlar</label>
+                <label><input type="checkbox" id="search-videos"> Videolar</label>
+                <label><input type="checkbox" id="search-audio"> Audio</label>
+                <label><input type="checkbox" id="search-files"> Fayllar</label>
+            </div>
+            <input type="date" id="search-date-from" style="margin: 5px 0; padding: 8px;">
+            <span>dan</span>
+            <input type="date" id="search-date-to" style="margin: 5px 0; padding: 8px;">
+            <span>gacha</span>
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModals()">Bekor qilish</button>
+                <button class="btn primary" onclick="performAdvancedSearch()">Qidirish</button>
+            </div>
+        </div>
+    `;
+}
+
+async function performAdvancedSearch() {
+    const term = document.getElementById('search-term').value.toLowerCase();
+    alert('Qidiruv natijalari: ' + (term || 'Barcha xabarlar'));
+    // In a full implementation, this would filter messages based on all criteria
+}
+
+// ==================== GROUP ADMIN CONTROLS ====================
+
+function showAdminControls() {
+    if (!currentChat || currentChat.type !== 'group') {
+        alert('Bu funksiya faqat guruhlar uchun!');
+        return;
+    }
+
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-overlay').innerHTML = `
+        <div class="modal">
+            <h3>Guruh boshqaruvi</h3>
+            <div class="admin-controls">
+                <button class="action-item" onclick="setGroupTitle()">📝 Guruh nomini o'zgartirish</button>
+                <button class="action-item" onclick="setGroupPhoto()">📷 Guruh rasmini o'zgartirish</button>
+                <button class="action-item" onclick="addGroupAdmin()">👤 Admin qo'shish</button>
+                <button class="action-item" onclick="removeGroupMember()">❌ A'zoni o'chirish</button>
+                <button class="action-item" onclick="muteGroup()">🔇 Guruhni jimjit qilish</button>
+                <button class="action-item" onclick="clearGroupHistory()">🗑️ Guruh tarixini tozalash</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModals()">Yopish</button>
+            </div>
+        </div>
+    `;
+}
+
+async function setGroupTitle() {
+    const newTitle = prompt('Yangi guruh nomi:');
+    if (!newTitle) return;
+
+    try {
+        await apiRequest(`/chats/${currentChat.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name: newTitle })
+        });
+
+        currentChat.name = newTitle;
+        updateChatHeader();
+        closeModals();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+function setGroupPhoto() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            const avatar = ev.target.result;
+
+            try {
+                await apiRequest(`/chats/${currentChat.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ avatar: avatar })
+                });
+
+                currentChat.avatar = avatar;
+                updateChatHeader();
+                closeModals();
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
+// ==================== MESSAGE AUTO-DELETE ====================
+
+function showAutoDeleteModal() {
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-overlay').innerHTML = `
+        <div class="modal">
+            <h3>Xabarlarni avto-o'chirish</h3>
+            <p>Xabarlar qancha vaqtdan keyin o'chadi:</p>
+            <select id="auto-delete-time" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px;">
+                <option value="0">O'chirmaslik</option>
+                <option value="3600000">1 soat</option>
+                <option value="86400000">1 kun</option>
+                <option value="604800000">1 hafta</option>
+                <option value="2592000000">1 oy</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModals()">Bekor qilish</button>
+                <button class="btn primary" onclick="setAutoDelete()">Saqlash</button>
+            </div>
+        </div>
+    `;
+}
+
+function setAutoDelete() {
+    const time = document.getElementById('auto-delete-time').value;
+    localStorage.setItem('autoDeleteTime', time);
+    alert('Avto-o\'chirish vaqti o\'rnatildi!');
+    closeModals();
+}
+
+// ==================== LINK PREVIEW ====================
+
+async function generateLinkPreview(url) {
+    // Check if URL is a known service for special preview
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        return { type: 'youtube', url: url };
+    }
+    if (url.includes('instagram.com')) {
+        return { type: 'instagram', url: url };
+    }
+    if (url.includes('twitter.com')) {
+        return { type: 'twitter', url: url };
+    }
+
+    // Default link preview
+    return {
+        type: 'link',
+        url: url,
+        title: url,
+        description: '',
+        image: null
+    };
+}
+
+// ==================== CONTACT SHARING ====================
+
+function shareContact() {
+    const phone = prompt('Telefon raqamini kiriting:');
+    if (!phone) return;
+
+    const name = prompt('Ismni kiriting:') || '';
+
+    const contact = {
+        type: 'contact',
+        phone: phone,
+        name: name,
+        vCard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEND:VCARD`
+    };
+
+    if (currentChat) {
+        apiRequest(`/chats/${currentChat.id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({
+                text: `📱 ${name} - ${phone}`,
+                attachment: contact
+            })
+        }).then(() => {
+            renderMessages();
+        }).catch(error => {
+            alert(error.message);
+        });
+    }
+}
+
+// ==================== LOCATION SHARING ====================
+
+function shareLocation() {
+    if (!navigator.geolocation) {
+        alert('Geolokatsiya qo\'llab-quvvatlanmaydi!');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            const location = {
+                type: 'location',
+                latitude: latitude,
+                longitude: longitude,
+                accuracy: position.coords.accuracy
+            };
+
+            if (currentChat) {
+                apiRequest(`/chats/${currentChat.id}/messages`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        text: `📍 Joylashuv`,
+                        attachment: location
+                    })
+                }).then(() => {
+                    renderMessages();
+                }).catch(error => {
+                    alert(error.message);
+                });
+            }
+        },
+        (error) => {
+            alert('Joylashuvni olishda xatolik: ' + error.message);
+        }
+    );
+}
