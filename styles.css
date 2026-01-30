@@ -847,6 +847,28 @@ body.dark-mode .btn.secondary:hover {
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* White modal for Add User */
+.modal.modal-white {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: none;
+    color: #1a1a1a;
+}
+
+.modal.modal-white h3 {
+    background: none;
+    -webkit-text-fill-color: #1a1a1a;
+    color: #1a1a1a;
+}
+
+.modal.modal-white input[type="text"] {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1a1a1a;
+}
+
+.modal.modal-white input[type="text"]::placeholder {
+    color: rgba(0, 0, 0, 0.4);
+}
+
 body.dark-mode .action-item {
     background: rgba(255, 255, 255, 0.08);
     color: #e0e0e0;
