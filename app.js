@@ -503,7 +503,7 @@ async function renderMessages() {
             const messageEl = document.createElement('div');
             messageEl.className = `message ${isOwn ? 'sent' : 'received'}`;
             messageEl.innerHTML = `
-                ${currentChat?.type === 'group' && !isOwn ? `<div class="message-sender">${sender?.name || 'Noma\'lum'}</div>` : ''}
+                ${currentChat?.type === 'group' && !isOwn ? `<div class="message-sender">${sender?.name || 'Noma\'lum'} (@${sender?.username || 'unknown'})</div>` : ''}
                 ${previewHtml}
                 ${attachmentHtml}
                 ${msg.text ? `<div class="message-text">${msg.text}</div>` : ''}
@@ -684,36 +684,48 @@ async function showCreateGroupModal() {
 }
 
 async function showAddUserModal() {
-    if (!currentChat || currentChat.type !== 'group') {
-        alert('Bu funksiya faqat guruhlar uchun!');
-        return;
-    }
-
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById('add-user-modal').classList.remove('hidden');
 
     const usersList = document.getElementById('available-users');
-    usersList.innerHTML = '';
+    usersList.innerHTML = '<p style="margin-bottom: 10px; color: #666;">Yangi suhbat bosish uchun foydalanuvchini bosing:</p>';
 
     // Refresh users cache
     usersCache = await apiRequest('/users');
 
-    const existingParticipants = currentChat.participants || [];
-    const availableUsers = usersCache.filter(u => !existingParticipants.includes(u.id) && u.id !== currentUser.id);
+    // Get all users except current user
+    const availableUsers = usersCache.filter(u => u.id !== currentUser.id);
 
     if (availableUsers.length === 0) {
-        usersList.innerHTML = '<p>Qo\'shish uchun foydalanuvchilar yo\'q</p>';
+        usersList.innerHTML += '<p>Boshqa foydalanuvchilar yo\'q</p>';
         return;
     }
 
     availableUsers.forEach(user => {
         usersList.innerHTML += `
-            <div class="user-checkbox">
-                <input type="checkbox" value="${user.id}">
-                ${user.name} (@${user.username})
+            <div class="user-item" onclick="startPrivateChat(${user.id})" style="cursor: pointer; padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
+                <img src="${getAvatarUrl(user.avatar)}" alt="${user.name}" style="width: 40px; height: 40px; border-radius: 50%;">
+                <div>
+                    <div style="font-weight: 600;">${user.name}</div>
+                    <div style="font-size: 12px; color: ${user.online ? '#4caf50' : '#888'};">${user.online ? 'Online' : 'Offline'}</div>
+                </div>
             </div>
         `;
     });
+}
+
+// Start private chat with user
+async function startPrivateChat(userId) {
+    try {
+        const chat = await apiRequest('/chats/private', {
+            method: 'POST',
+            body: JSON.stringify({ userId })
+        });
+        closeModals();
+        openChat(chat);
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 function showProfileModal() {
