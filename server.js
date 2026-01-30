@@ -451,9 +451,45 @@ app.post('/api/chats/:id/messages', authenticate, (req, res) => {
         return res.status(403).json({ error: 'Access denied' });
     }
 
-    const { text, attachment } = req.body;
+    const { text, attachment, replyTo, forwardedFrom, scheduledFor, reactions } = req.body;
     if (!text && !attachment) {
         return res.status(400).json({ error: 'Message text or attachment is required' });
+    }
+
+    // Check if scheduled for future
+    if (scheduledFor) {
+        const scheduledDate = new Date(scheduledFor);
+        if (scheduledDate > new Date()) {
+            // Save as scheduled message
+            const newMessage = {
+                id: Date.now(),
+                chatId: chat.id,
+                senderId: req.userId,
+                text: text || '',
+                attachment: attachment || null,
+                replyTo: replyTo || null,
+                forwardedFrom: forwardedFrom || null,
+                scheduledFor: scheduledFor,
+                status: 'scheduled',
+                timestamp: new Date().toISOString()
+            };
+
+            messages.push(newMessage);
+            saveData();
+
+            // Schedule sending
+            const delay = scheduledDate - new Date();
+            setTimeout(async () => {
+                const msgIndex = messages.findIndex(m => m.id === newMessage.id);
+                if (msgIndex > -1) {
+                    messages[msgIndex].status = 'sent';
+                    messages[msgIndex].scheduledFor = null;
+                    saveData();
+                }
+            }, delay);
+
+            return res.json(newMessage);
+        }
     }
 
     const newMessage = {
@@ -462,6 +498,9 @@ app.post('/api/chats/:id/messages', authenticate, (req, res) => {
         senderId: req.userId,
         text: text || '',
         attachment: attachment || null,
+        replyTo: replyTo || null,
+        forwardedFrom: forwardedFrom || null,
+        reactions: reactions || {},
         status: 'sent',
         timestamp: new Date().toISOString()
     };
@@ -470,6 +509,77 @@ app.post('/api/chats/:id/messages', authenticate, (req, res) => {
     saveData();
 
     res.json(newMessage);
+});
+
+// Message reactions
+app.post('/api/messages/:id/reactions', authenticate, (req, res) => {
+    const message = messages.find(m => m.id === parseInt(req.params.id));
+    if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+    }
+
+    const { reactions } = req.body;
+    message.reactions = reactions;
+    saveData();
+
+    res.json(message);
+});
+
+// Pin message
+app.post('/api/messages/:id/pin', authenticate, (req, res) => {
+    const message = messages.find(m => m.id === parseInt(req.params.id));
+    if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+    }
+
+    // Unpin all other messages in this chat
+    messages.forEach(m => {
+        if (m.chatId === message.chatId) {
+            m.pinned = false;
+        }
+    });
+
+    message.pinned = true;
+    saveData();
+
+    res.json(message);
+});
+
+// Unpin message
+app.post('/api/messages/:id/unpin', authenticate, (req, res) => {
+    const message = messages.find(m => m.id === parseInt(req.params.id));
+    if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+    }
+
+    message.pinned = false;
+    saveData();
+
+    res.json(message);
+});
+
+// Create channel
+app.post('/api/chats/channel', authenticate, (req, res) => {
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: 'Channel name is required' });
+    }
+
+    const newChannel = {
+        id: Date.now(),
+        type: 'channel',
+        name,
+        participants: [req.userId],
+        avatar: '',
+        createdBy: req.userId,
+        createdAt: new Date().toISOString()
+    };
+
+    chats.push(newChannel);
+    saveData();
+
+    res.json(newChannel);
 });
 
 // Update message

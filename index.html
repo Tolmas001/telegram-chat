@@ -53,7 +53,9 @@
 
             <div id="bottom-actions">
                 <button id="profile-btn" class="action-btn">Profil</button>
+                <button id="create-channel-btn" class="action-btn">📢 Kanal</button>
                 <button id="dark-mode-btn" class="action-btn">🌙</button>
+                <button id="schedule-btn" class="action-btn">📅</button>
                 <button id="logout-btn" class="action-btn">Chiqish</button>
             </div>
         </div>
@@ -70,6 +72,8 @@
                     </div>
                 </div>
                 <div id="chat-actions">
+                    <button id="video-call-btn" class="icon-btn video" title="Video qo'ng'iroq">📹</button>
+                    <button id="voice-call-btn" class="icon-btn" title="Ovoz qo'ng'iroq">📞</button>
                     <button id="edit-chat-btn" class="icon-btn">✏️</button>
                     <button id="delete-chat-btn" class="icon-btn">🗑️</button>
                 </div>
@@ -88,11 +92,30 @@
             </div>
 
             <div id="message-input-area">
+                <button id="voice-btn" class="icon-btn" title="Ovoz xabar">🎤</button>
                 <button id="attach-btn" class="icon-btn">📎</button>
-                <input type="file" id="file-input" style="display:none" accept="image/*,.pdf,.doc,.docx">
+                <input type="file" id="file-input" style="display:none" accept="image/*,.pdf,.doc,.docx,.mp3,.wav,.ogg">
                 <button id="emoji-btn" class="icon-btn">😊</button>
                 <input type="text" id="message-input" placeholder="Xabar yozing...">
                 <button id="send-btn" class="icon-btn">➤</button>
+            </div>
+
+            <!-- Voice Recording UI -->
+            <div id="voice-recording-ui" class="hidden">
+                <div class="voice-recording-info">
+                    <span id="voice-recording-time">00:00</span>
+                    <div class="voice-wave-animation">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                </div>
+                <div class="voice-recording-actions">
+                    <button id="voice-cancel-btn" class="icon-btn">✕</button>
+                    <button id="voice-send-btn" class="icon-btn">➤</button>
+                </div>
             </div>
 
             <!-- Emoji Picker -->

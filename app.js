@@ -19,6 +19,26 @@ let isRegistering = false;
 let currentFile = null;
 let currentFilePreview = null;
 
+// Voice Recording State
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recordingStartTime = null;
+let recordingTimer = null;
+
+// Reply State
+let replyToMessage = null;
+
+// Forward State
+let forwardMessages = [];
+
+// Message Reactions
+const reactionEmojis = ['👍', '👎', '❤️', '😂', '😮', '😢', '🙏', '🔥'];
+
+// Call State
+let currentCall = null;
+let localStream = null;
+
 // Compress image to reduce size
 async function compressImage(dataUrl, maxWidth = 200, maxHeight = 200, quality = 0.7) {
     return new Promise((resolve, reject) => {
@@ -162,6 +182,11 @@ function setupEventListeners() {
     });
     document.getElementById('file-input').addEventListener('change', handleFileSelect);
 
+    // Voice recording
+    document.getElementById('voice-btn').addEventListener('click', toggleVoiceRecording);
+    document.getElementById('voice-cancel-btn').addEventListener('click', cancelVoiceRecording);
+    document.getElementById('voice-send-btn').addEventListener('click', sendVoiceMessage);
+
     // Emoji picker
     document.getElementById('emoji-btn').addEventListener('click', toggleEmojiPicker);
     document.querySelectorAll('.emoji-category-btn').forEach(btn => {
@@ -186,9 +211,11 @@ function setupEventListeners() {
 
     // Sidebar buttons
     document.getElementById('create-group-btn').addEventListener('click', showCreateGroupModal);
+    document.getElementById('create-channel-btn').addEventListener('click', createChannel);
     document.getElementById('add-user-btn').addEventListener('click', showAddUserModal);
     document.getElementById('profile-btn').addEventListener('click', showProfileModal);
     document.getElementById('dark-mode-btn').addEventListener('click', toggleDarkMode);
+    document.getElementById('schedule-btn').addEventListener('click', showScheduleModal);
     document.getElementById('logout-btn').addEventListener('click', logout);
 
     // Modal buttons
@@ -229,6 +256,10 @@ function setupEventListeners() {
     // Chat actions
     document.getElementById('edit-chat-btn').addEventListener('click', editCurrentChat);
     document.getElementById('delete-chat-btn').addEventListener('click', deleteCurrentChat);
+
+    // Call buttons
+    document.getElementById('voice-call-btn').addEventListener('click', initiateVoiceCall);
+    document.getElementById('video-call-btn').addEventListener('click', initiateVideoCall);
 
     // Mobile back button
     document.getElementById('back-btn').addEventListener('click', goBackToChatList);
@@ -528,6 +559,21 @@ async function renderMessages() {
             return;
         }
 
+        // Render pinned message if any
+        const pinnedMessage = messages.find(m => m.pinned);
+        if (pinnedMessage) {
+            const pinnedEl = document.createElement('div');
+            pinnedEl.className = 'pinned-message';
+            pinnedEl.innerHTML = `
+                <span class="pinned-message-icon">📌</span>
+                <div class="pinned-message-content">
+                    <div class="pinned-message-sender">${pinnedMessage.senderId === currentUser.id ? 'Siz' : '...'}</div>
+                    <div class="pinned-message-text">${pinnedMessage.text || (pinnedMessage.attachment?.type === 'image' ? 'Rasm' : 'Xabar')}</div>
+                </div>
+            `;
+            messagesContainer.appendChild(pinnedEl);
+        }
+
         messages.forEach(msg => {
             const sender = usersCache.find(u => u.id === msg.senderId);
             const isOwn = msg.senderId === currentUser.id;
@@ -537,9 +583,69 @@ async function renderMessages() {
             if (msg.attachment) {
                 if (msg.attachment.type === 'image') {
                     attachmentHtml = `<div class="message-attachment image"><img src="${msg.attachment.data}" alt="Rasm" onclick="openImageModal(this.src)"></div>`;
+                } else if (msg.attachment.type === 'audio') {
+                    attachmentHtml = `
+                        <div class="audio-message">
+                            <audio id="audio-${msg.id}" src="${msg.attachment.data}" onended="document.getElementById('audio-play-${msg.id}').textContent='▶️'" ontimeupdate="updateAudioProgress(${msg.id})"></audio>
+                            <button class="audio-play-btn" id="audio-play-${msg.id}" onclick="toggleAudioPlayback(${msg.id})">▶️</button>
+                            <div class="audio-waveform">
+                                <div class="audio-waveform-progress" id="audio-progress-${msg.id}" style="width: 0%"></div>
+                            </div>
+                            <span class="audio-duration" id="audio-duration-${msg.id}">${formatDuration(msg.attachment.duration || 0)}</span>
+                        </div>
+                    `;
+                } else if (msg.attachment.type === 'video') {
+                    attachmentHtml = `
+                        <div class="video-message" onclick="openVideoModal('${msg.attachment.data}')">
+                            <video src="${msg.attachment.data}"></video>
+                            <div class="video-message-overlay">
+                                <div class="video-play-icon">▶️</div>
+                            </div>
+                            ${msg.attachment.duration ? `<span class="video-duration">${formatDuration(msg.attachment.duration)}</span>` : ''}
+                        </div>
+                    `;
                 } else {
-                    attachmentHtml = `<div class="message-attachment file"><a href="${msg.attachment.data}" download="${msg.attachment.name}">📎 ${msg.attachment.name}</a></div>`;
+                    attachmentHtml = `<div class="message-attachment file"><a href="${msg.attachment.data}" download="${msg.attachment.name || 'fayl'}">📎 ${msg.attachment.name || 'Fayl'}</a></div>`;
                 }
+            }
+
+            // Forward indicator
+            let forwardHtml = '';
+            if (msg.forwardedFrom) {
+                forwardHtml = `<div class="forwarded-indicator">Yuborilgan</div>`;
+            }
+
+            // Reply indicator
+            let replyHtml = '';
+            if (msg.replyTo) {
+                const repliedMsg = messages.find(m => m.id === msg.replyTo);
+                if (repliedMsg) {
+                    replyHtml = `
+                        <div class="thread-preview" onclick="scrollToMessage(${msg.replyTo})">
+                            ↩️ ${repliedMsg.text || (repliedMsg.attachment?.type === 'image' ? 'Rasm' : 'Xabar')}
+                        </div>
+                    `;
+                }
+            }
+
+            // Reactions
+            let reactionsHtml = '';
+            if (msg.reactions) {
+                const reactionCounts = [];
+                Object.entries(msg.reactions).forEach(([emoji, users]) => {
+                    if (users.length > 0) {
+                        reactionCounts.push(`<span class="message-reaction ${users.includes(currentUser.id) ? 'my-reaction' : ''}">${emoji} ${users.length}</span>`);
+                    }
+                });
+                if (reactionCounts.length > 0) {
+                    reactionsHtml = `<div class="message-reactions">${reactionCounts.join('')}</div>`;
+                }
+            }
+
+            // Scheduled badge
+            let scheduledBadge = '';
+            if (msg.scheduledFor) {
+                scheduledBadge = '<span class="scheduled-badge">Rejalashtirilgan</span>';
             }
 
             // Add image preview for sending
@@ -555,21 +661,30 @@ async function renderMessages() {
 
             const messageEl = document.createElement('div');
             messageEl.className = `message ${isOwn ? 'sent' : 'received'}`;
+            messageEl.id = `message-${msg.id}`;
             messageEl.innerHTML = `
                 ${currentChat?.type === 'group' && !isOwn ? `<div class="message-sender">${sender?.name || 'Noma\'lum'} (@${sender?.username || 'unknown'})</div>` : ''}
+                ${forwardHtml}
                 ${previewHtml}
+                ${replyHtml}
                 ${attachmentHtml}
                 ${msg.text ? `<div class="message-text">${msg.text}</div>` : ''}
+                ${scheduledBadge}
                 <div class="message-meta">
                     <span class="message-time">${formatTime(msg.timestamp)}</span>
                     ${isOwn ? `<span class="message-status-icon">${getMessageStatus(msg.status)}</span>` : ''}
                 </div>
-                ${isOwn ? `
-                    <div class="message-actions">
+                ${reactionsHtml}
+                <div class="message-actions">
+                    <button class="message-action-btn" onclick="showReactionsModal(${msg.id})">😀</button>
+                    <button class="message-action-btn" onclick="setReplyTo(messages.find(m => m.id === ${msg.id})); renderMessages();">↩️</button>
+                    <button class="message-action-btn" onclick="showForwardModal(${msg.id})">↗️</button>
+                    ${isOwn ? `
+                        <button class="message-action-btn" onclick="pinMessage(${msg.id})">📌</button>
                         <button class="message-action-btn" onclick="editMessage(${msg.id})">✏️</button>
                         <button class="message-action-btn" onclick="deleteMessage(${msg.id})">🗑️</button>
-                    </div>
-                ` : ''}
+                    ` : ''}
+                </div>
             `;
             messagesContainer.appendChild(messageEl);
         });
@@ -577,6 +692,23 @@ async function renderMessages() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     } catch (error) {
         console.error('Error loading messages:', error);
+    }
+}
+
+// Format duration (seconds to MM:SS)
+function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Scroll to message
+function scrollToMessage(messageId) {
+    const messageEl = document.getElementById(`message-${messageId}`);
+    if (messageEl) {
+        messageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        messageEl.classList.add('highlight');
+        setTimeout(() => messageEl.classList.remove('highlight'), 2000);
     }
 }
 
@@ -658,6 +790,11 @@ async function sendMessage() {
             data.attachment = currentFile;
         }
 
+        // Include reply if selected
+        if (replyToMessage) {
+            data.replyTo = replyToMessage.id;
+        }
+
         await apiRequest(`/chats/${currentChat.id}/messages`, {
             method: 'POST',
             body: JSON.stringify(data)
@@ -668,11 +805,448 @@ async function sendMessage() {
         currentFile = null;
         currentFilePreview = null;
         document.getElementById('file-input').value = '';
+        clearReply();
 
         renderMessages();
         renderChatList();
     } catch (error) {
         alert(error.message);
+    }
+}
+
+// ==================== VOICE RECORDING ====================
+
+async function toggleVoiceRecording() {
+    if (isRecording) {
+        // Stop recording
+        stopRecording();
+    } else {
+        // Start recording
+        await startRecording();
+    }
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioUrl = await blobToBase64(audioBlob);
+
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        recordingStartTime = Date.now();
+
+        // Update UI
+        document.getElementById('voice-btn').classList.add('recording');
+        document.getElementById('message-input-area').classList.add('hidden');
+        document.getElementById('voice-recording-ui').classList.remove('hidden');
+
+        // Start timer
+        recordingTimer = setInterval(updateRecordingTime, 1000);
+
+    } catch (error) {
+        alert('Mikrofon ruxsati berilmagan yoki mavjud emas!');
+        console.error('Microphone error:', error);
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+
+        // Clear timer
+        clearInterval(recordingTimer);
+
+        // Update UI
+        document.getElementById('voice-btn').classList.remove('recording');
+        document.getElementById('message-input-area').classList.remove('hidden');
+        document.getElementById('voice-recording-ui').classList.add('hidden');
+    }
+}
+
+function cancelVoiceRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+
+        // Clear timer
+        clearInterval(recordingTimer);
+
+        // Clear audio chunks
+        audioChunks = [];
+
+        // Update UI
+        document.getElementById('voice-btn').classList.remove('recording');
+        document.getElementById('message-input-area').classList.remove('hidden');
+        document.getElementById('voice-recording-ui').classList.add('hidden');
+        document.getElementById('voice-recording-time').textContent = '00:00';
+    }
+}
+
+async function sendVoiceMessage() {
+    if (audioChunks.length === 0) return;
+
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const audioUrl = await blobToBase64(audioBlob);
+
+    const duration = Math.round((Date.now() - recordingStartTime) / 1000);
+
+    try {
+        await apiRequest(`/chats/${currentChat.id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({
+                text: '',
+                attachment: {
+                    type: 'audio',
+                    data: audioUrl,
+                    duration: duration
+                }
+            })
+        });
+
+        // Reset UI
+        cancelVoiceRecording();
+
+        renderMessages();
+        renderChatList();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+function updateRecordingTime() {
+    const elapsed = Math.round((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    document.getElementById('voice-recording-time').textContent =
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+// ==================== MESSAGE REACTIONS ====================
+
+function showReactionsModal(messageId) {
+    document.getElementById('modal-overlay').classList.remove('hidden');
+
+    let modalHtml = `
+        <div class="modal">
+            <h3>Reaksiya</h3>
+            <div class="reactions-grid">
+    `;
+
+    reactionEmojis.forEach(emoji => {
+        modalHtml += `<button class="reaction-btn" onclick="addReaction(${messageId}, '${emoji}')">${emoji}</button>`;
+    });
+
+    modalHtml += `
+            </div>
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModals()">Bekor qilish</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('modal-overlay').innerHTML = modalHtml;
+}
+
+async function addReaction(messageId, emoji) {
+    try {
+        // Get current messages and add reaction
+        const messages = await apiRequest(`/chats/${currentChat.id}/messages`);
+        const message = messages.find(m => m.id === messageId);
+
+        if (message) {
+            if (!message.reactions) message.reactions = {};
+
+            // Toggle reaction
+            if (message.reactions[emoji] && message.reactions[emoji].includes(currentUser.id)) {
+                message.reactions[emoji] = message.reactions[emoji].filter(id => id !== currentUser.id);
+            } else {
+                if (!message.reactions[emoji]) message.reactions[emoji] = [];
+                message.reactions[emoji].push(currentUser.id);
+            }
+
+            // Save to server
+            await apiRequest(`/messages/${messageId}/reactions`, {
+                method: 'POST',
+                body: JSON.stringify({ reactions: message.reactions })
+            });
+
+            closeModals();
+            renderMessages();
+        }
+    } catch (error) {
+        console.error('Reaction error:', error);
+    }
+}
+
+// ==================== REPLY FUNCTIONALITY ====================
+
+function setReplyTo(message) {
+    replyToMessage = message;
+    updateReplyIndicator();
+}
+
+function clearReply() {
+    replyToMessage = null;
+    const indicator = document.getElementById('reply-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+function updateReplyIndicator() {
+    // Remove existing indicator
+    const existing = document.getElementById('reply-indicator');
+    if (existing) existing.remove();
+
+    if (replyToMessage) {
+        const inputArea = document.getElementById('message-input-area');
+        const indicator = document.createElement('div');
+        indicator.id = 'reply-indicator';
+        indicator.className = 'reply-indicator';
+        indicator.innerHTML = `
+            <span>↩️</span>
+            <div class="reply-content">
+                <div class="reply-sender">${replyToMessage.senderId === currentUser.id ? 'Siz' : '...'}</div>
+                <div class="reply-text">${replyToMessage.text || (replyToMessage.attachment?.type === 'image' ? 'Rasm' : 'Xabar')}</div>
+            </div>
+            <button class="reply-close" onclick="clearReply()">✕</button>
+        `;
+        inputArea.parentNode.insertBefore(indicator, inputArea);
+    }
+}
+
+// ==================== PIN MESSAGES ====================
+
+async function pinMessage(messageId) {
+    try {
+        await apiRequest(`/messages/${messageId}/pin`, {
+            method: 'POST'
+        });
+        closeModals();
+        renderMessages();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function unpinMessage(messageId) {
+    try {
+        await apiRequest(`/messages/${messageId}/unpin`, {
+            method: 'POST'
+        });
+        renderMessages();
+    } catch (error) {
+        console.error('Unpin error:', error);
+    }
+}
+
+// ==================== FORWARD MESSAGES ====================
+
+function showForwardModal(messageId) {
+    forwardMessages = [messageId];
+    showChatSelectionModal();
+}
+
+async function showChatSelectionModal() {
+    document.getElementById('modal-overlay').classList.remove('hidden');
+
+    try {
+        const chats = await apiRequest('/chats');
+
+        let modalHtml = `
+            <div class="modal">
+                <h3>Xabarni yuborish</h3>
+                <div class="chat-selection-list">
+        `;
+
+        chats.forEach(chat => {
+            const chatName = chat.type === 'group' ? chat.name : '...';
+            modalHtml += `
+                <div class="chat-select-item" onclick="forwardToChat(${chat.id})">
+                    <span>${chatName}</span>
+                </div>
+            `;
+        });
+
+        modalHtml += `
+                </div>
+                <div class="modal-actions">
+                    <button class="btn secondary" onclick="closeModals()">Bekor qilish</button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('modal-overlay').innerHTML = modalHtml;
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function forwardToChat(chatId) {
+    try {
+        const messages = await apiRequest(`/chats/${currentChat.id}/messages`);
+
+        for (const msgId of forwardMessages) {
+            const message = messages.find(m => m.id === msgId);
+            if (message) {
+                await apiRequest(`/chats/${chatId}/messages`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        text: message.text,
+                        attachment: message.attachment,
+                        forwardedFrom: message.senderId
+                    })
+                });
+            }
+        }
+
+        closeModals();
+        alert('Xabar yuborildi!');
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+// ==================== SCHEDULED MESSAGES ====================
+
+function showScheduleModal() {
+    document.getElementById('modal-overlay').classList.remove('hidden');
+
+    const modalHtml = `
+        <div class="modal">
+            <h3>Xabarni rejalashtirish</h3>
+            <input type="datetime-local" id="schedule-time" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px;">
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModals()">Bekor qilish</button>
+                <button class="btn primary" onclick="scheduleMessage()">Rejalashtirish</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('modal-overlay').innerHTML = modalHtml;
+}
+
+async function scheduleMessage() {
+    const scheduleTime = document.getElementById('schedule-time').value;
+    const text = messageInput.value.trim();
+
+    if (!scheduleTime) {
+        alert('Sana va vaqtni tanlang!');
+        return;
+    }
+
+    try {
+        await apiRequest(`/chats/${currentChat.id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({
+                text: text || '',
+                attachment: currentFile,
+                scheduledFor: new Date(scheduleTime).toISOString()
+            })
+        });
+
+        closeModals();
+        messageInput.value = '';
+        currentFile = null;
+        document.getElementById('file-input').value = '';
+
+        alert('Xabar rejalashtirildi!');
+        renderChatList();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+// ==================== AUDIO MESSAGE PLAYBACK ====================
+
+function toggleAudioPlayback(audioId) {
+    const audio = document.getElementById(`audio-${audioId}`);
+    const playBtn = document.getElementById(`audio-play-${audioId}`);
+
+    if (audio.paused) {
+        // Pause all other audio
+        document.querySelectorAll('.audio-message audio').forEach(a => {
+            if (a.id !== `audio-${audioId}`) {
+                a.pause();
+                a.closest('.audio-message').querySelector('.audio-play-btn').textContent = '▶️';
+            }
+        });
+        audio.play();
+        playBtn.textContent = '⏸️';
+    } else {
+        audio.pause();
+        playBtn.textContent = '▶️';
+    }
+}
+
+function updateAudioProgress(audioId) {
+    const audio = document.getElementById(`audio-${audioId}`);
+    const progress = document.getElementById(`audio-progress-${audioId}`);
+    const duration = document.getElementById(`audio-duration-${audioId}`);
+
+    if (audio && progress) {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = percent + '%';
+    }
+
+    if (duration && audio.duration) {
+        const mins = Math.floor(audio.duration / 60);
+        const secs = Math.floor(audio.duration % 60);
+        duration.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+}
+
+// ==================== CHANNELS SUPPORT ====================
+
+async function createChannel() {
+    const channelName = prompt('Kanal nomini kiriting:');
+    if (!channelName) return;
+
+    try {
+        const channel = await apiRequest('/chats/channel', {
+            method: 'POST',
+            body: JSON.stringify({ name: channelName })
+        });
+
+        renderChatList();
+        openChat(channel);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+// ==================== READ RECEIPTS ====================
+
+function getMessageStatus(status) {
+    if (status === 'seen') {
+        return '<span class="message-status-icon seen">✓✓</span>';
+    } else if (status === 'delivered') {
+        return '<span class="message-status-icon delivered">✓✓</span>';
+    } else {
+        return '<span class="message-status-icon sent">✓</span>';
     }
 }
 
@@ -1186,6 +1760,57 @@ function loadEmojis(category) {
         });
         grid.appendChild(item);
     });
+}
+
+// ==================== VOICE/VIDEO CALLS ====================
+
+function initiateVoiceCall() {
+    if (!currentChat || currentChat.type === 'group') {
+        alert('Bu funksiya faqat shaxsiy suhbatlar uchun mavjud!');
+        return;
+    }
+
+    showCallModal('audio');
+}
+
+function initiateVideoCall() {
+    if (!currentChat || currentChat.type === 'group') {
+        alert('Bu funksiya faqat shaxsiy suhbatlar uchun mavjud!');
+        return;
+    }
+
+    showCallModal('video');
+}
+
+function showCallModal(type) {
+    const isVideo = type === 'video';
+
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-overlay').innerHTML = `
+        <div class="modal" style="text-align: center;">
+            <h3>${isVideo ? 'Video' : 'Ovoz'} qo'ng'iroq</h3>
+            <div id="call-status" style="margin: 20px 0;">
+                <p>${isVideo ? '📹' : '📞'} Qo'ng'iroq boshlanmoqda...</p>
+            </div>
+            <div class="call-actions" style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
+                <button class="icon-btn" style="background: #ff4444; width: 60px; height: 60px; font-size: 24px;" onclick="endCall()">📞</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 12px; color: #888;">Real vaqtda qo'ng'iroq uchun WebRTC serveri kerak</p>
+        </div>
+    `;
+
+    // Simulate call
+    setTimeout(() => {
+        document.getElementById('call-status').innerHTML = `
+            <p>☎️ ${currentChat.name || 'Foydalanuvchi'}</p>
+            <p style="color: #4caf50;">00:00</p>
+        `;
+    }, 2000);
+}
+
+function endCall() {
+    closeModals();
+    alert('Qo\'ng\'iroq tugatildi');
 }
 
 // Initialize

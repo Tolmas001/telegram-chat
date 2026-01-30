@@ -576,6 +576,438 @@ body {
     border-radius: 50%;
 }
 
+#voice-btn {
+    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+}
+
+#voice-btn.recording {
+    background: #ff4444;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Voice Recording UI */
+#voice-recording-ui {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    margin: 10px;
+}
+
+.voice-recording-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#voice-recording-time {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    min-width: 50px;
+}
+
+.voice-wave-animation {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wave-bar {
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    animation: wave 0.5s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.wave-bar:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.wave-bar:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.wave-bar:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.wave-bar:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+@keyframes wave {
+
+    0%,
+    100% {
+        height: 10px;
+    }
+
+    50% {
+        height: 25px;
+    }
+}
+
+.voice-recording-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.voice-recording-actions .icon-btn {
+    width: 40px;
+    height: 40px;
+}
+
+/* Message Reactions */
+.message-reactions {
+    position: absolute;
+    bottom: -10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    max-width: 150px;
+}
+
+.message-reaction {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.message-reaction:hover {
+    transform: scale(1.1);
+}
+
+.message-reaction.my-reaction {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+/* Reply Message UI */
+.reply-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.reply-indicator .reply-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.reply-indicator .reply-text {
+    font-size: 14px;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reply-indicator .reply-sender {
+    font-size: 12px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.reply-indicator .reply-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.6;
+}
+
+.reply-indicator .reply-close:hover {
+    opacity: 1;
+}
+
+/* Thread/Reply View */
+.thread-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    margin-top: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #667eea;
+}
+
+.thread-preview:hover {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+/* Pinned Message */
+.pinned-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid #ffc107;
+}
+
+.pinned-message-icon {
+    font-size: 20px;
+}
+
+.pinned-message-content {
+    flex: 1;
+}
+
+.pinned-message-text {
+    font-size: 14px;
+    color: #1a1a1a;
+}
+
+.pinned-message-sender {
+    font-size: 12px;
+    color: #ffc107;
+    font-weight: 600;
+}
+
+/* Message Forwarded */
+.forwarded-indicator {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.forwarded-indicator::before {
+    content: '↗️';
+}
+
+/* Read Receipts */
+.message-status-icon {
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.message-status-icon.sent::after {
+    content: '✓';
+}
+
+.message-status-icon.delivered::after {
+    content: '✓✓';
+}
+
+.message-status-icon.seen::after {
+    content: '✓✓';
+    color: #4caf50;
+}
+
+/* Audio Message */
+.audio-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 200px;
+}
+
+.audio-play-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.audio-waveform {
+    flex: 1;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.audio-waveform-progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+}
+
+.audio-duration {
+    font-size: 12px;
+    color: #888;
+    min-width: 35px;
+}
+
+/* Scheduled Message */
+.scheduled-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+/* Call Buttons */
+.call-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.call-btn:hover {
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
+}
+
+.call-btn.video {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+/* Video Message */
+.video-message {
+    position: relative;
+    width: 200px;
+    height: 150px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.video-message video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-message-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-play-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    padding: 3px 6px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Channel Support */
+.channel-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.chat-item-channel-icon {
+    font-size: 16px;
+}
+
+/* Dark Mode Adjustments */
+body.dark-mode #voice-recording-ui {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+body.dark-mode #voice-recording-time {
+    color: #1a1a1a;
+}
+
+body.dark-mode .reply-indicator {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .reply-indicator .reply-text {
+    color: #fff;
+}
+
+body.dark-mode .pinned-message {
+    background: rgba(255, 193, 7, 0.15);
+}
+
+body.dark-mode .pinned-message-text {
+    color: #fff;
+}
+
+body.dark-mode .message-reaction {
+    background: rgba(255, 255, 255, 0.9);
+}
+
 /* ==================== MODALS ==================== */
 #modal-overlay {
     position: fixed;
