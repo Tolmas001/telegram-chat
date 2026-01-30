@@ -829,22 +829,22 @@ async function toggleVoiceRecording() {
 async function startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
         audioChunks = [];
 
+        // Request data more frequently for better capture
         mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
         };
 
-        mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const audioUrl = await blobToBase64(audioBlob);
-
-            // Stop all tracks
-            stream.getTracks().forEach(track => track.stop());
+        mediaRecorder.onstop = () => {
+            // Data is now ready in audioChunks
+            console.log('Recording stopped, chunks:', audioChunks.length);
         };
 
-        mediaRecorder.start();
+        mediaRecorder.start(1000); // Request data every 1 second
         isRecording = true;
         recordingStartTime = Date.now();
 
@@ -864,22 +864,31 @@ async function startRecording() {
 
 function stopRecording() {
     if (mediaRecorder && isRecording) {
-        mediaRecorder.stop();
-        isRecording = false;
+        // Request final data chunk
+        if (mediaRecorder.state === 'recording') {
+            mediaRecorder.requestData();
+        }
 
-        // Clear timer
-        clearInterval(recordingTimer);
+        // Stop after a small delay to ensure final data is captured
+        setTimeout(() => {
+            if (mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
 
-        // Update UI
-        document.getElementById('voice-btn').classList.remove('recording');
-        document.getElementById('message-input-area').classList.remove('hidden');
-        document.getElementById('voice-recording-ui').classList.add('hidden');
+            // Clear timer
+            clearInterval(recordingTimer);
+
+            // Update UI
+            document.getElementById('voice-btn').classList.remove('recording');
+            document.getElementById('message-input-area').classList.remove('hidden');
+            document.getElementById('voice-recording-ui').classList.add('hidden');
+        }, 200);
     }
 }
 
 function cancelVoiceRecording() {
     if (mediaRecorder && isRecording) {
-        mediaRecorder.stop();
         isRecording = false;
 
         // Clear timer
@@ -897,13 +906,29 @@ function cancelVoiceRecording() {
 }
 
 async function sendVoiceMessage() {
-    if (audioChunks.length === 0) return;
-
+    if (audioChunks.length === 0) {
+        alert('Ovoz yozib olinmadi! Qayta urinib ko\'ring.');
+        cancelVoiceRecording();
+        return;
+    }
+    
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    
+    if (audioBlob.size === 0) {
+        alert('Ovoz fayli bo\'sh! Qayta yozib ko\'ring.');
+        cancelVoiceRecording();
+        return;
+    }
+    
     const audioUrl = await blobToBase64(audioBlob);
-
+    
     const duration = Math.round((Date.now() - recordingStartTime) / 1000);
-
+    
+    if (duration < 1) {
+        alert('Ovoz xabar juda qisqa! Kamida 1 soniya yozing.');
+        return;
+    }
+    
     try {
         await apiRequest(`/chats/${currentChat.id}/messages`, {
             method: 'POST',
@@ -916,14 +941,14 @@ async function sendVoiceMessage() {
                 }
             })
         });
-
-        // Reset UI
+        
         cancelVoiceRecording();
-
+        
         renderMessages();
         renderChatList();
     } catch (error) {
-        alert(error.message);
+        console.error('Voice message error:', error);
+        alert('Xabar yuborishda xatolik: ' + error.message);
     }
 }
 
