@@ -1,12 +1,14 @@
 // API Base URL - auto-detect based on device
 const getApiUrl = () => {
-    // Get current hostname
     const hostname = window.location.hostname;
-    // If accessed via IP or not localhost, use current host
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        return `${window.location.protocol}//${hostname}:3000/api`;
+    const protocol = window.location.protocol;
+    // If accessed via localhost, use port 3000
+    // Otherwise (production like Render), use same host without explicit port
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `${protocol}//${hostname}:3000/api`;
     }
-    return 'http://localhost:3000/api';
+    // For production (Render, etc.), use same host and port as the page
+    return `${protocol}//${hostname}/api`;
 };
 const API_URL = getApiUrl();
 
@@ -82,7 +84,7 @@ const authForm = document.getElementById('auth-form');
 const authTitle = document.getElementById('auth-title');
 const authBtn = document.getElementById('auth-btn');
 const authToggle = document.getElementById('auth-toggle');
-const chatList = document.getElementById('cp0hat-list');
+const chatList = document.getElementById('chat-list');
 const messagesContainer = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
