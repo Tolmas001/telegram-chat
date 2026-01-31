@@ -1,6 +1,3 @@
-/* Telegram-like Complete UI Redesign */
-
-/* ==================== BASE STYLES ==================== */
 * {
     margin: 0;
     padding: 0;
@@ -20,14 +17,13 @@ body.dark-theme {
     color: #ffffff;
 }
 
-/* ==================== LAYOUT ==================== */
 .telegram-app {
     display: flex;
     height: 100vh;
     width: 100vw;
 }
 
-/* Sidebar (Chat List) */
+
 .telegram-sidebar {
     width: 380px;
     height: 100%;
@@ -390,6 +386,10 @@ body.dark-theme .input-message {
 
 .input-message::placeholder {
     color: #999999;
+}
+
+body.dark-theme .input-message::placeholder {
+    color: #6b7280;
 }
 
 .input-btn {

@@ -11,20 +11,19 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'telegram-chat-secret-key-2024';
 const DATA_DIR = path.join(__dirname, 'data');
 
-// Ensure data directory exists
+
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Data file paths
+
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const CHATS_FILE = path.join(DATA_DIR, 'chats.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 
-// Middleware
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+       
         if (!origin) return callback(null, true);
         return callback(null, origin);
     },
@@ -34,14 +33,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(express.static(__dirname));
 
-// Root route - serve index.html
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ==================== FILE STORAGE ====================
-
-// Load data from files
 function loadData() {
     let users = [];
     let chats = [];
@@ -64,7 +60,7 @@ function loadData() {
     return { users, chats, messages };
 }
 
-// Save data to files
+
 function saveData() {
     try {
         fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
@@ -75,15 +71,14 @@ function saveData() {
     }
 }
 
-// Initialize data
+
 let { users, chats, messages } = loadData();
 
-// JWT token generation
+
 function generateToken(userId) {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
 }
 
-// Verify JWT token
 function verifyToken(token) {
     try {
         return jwt.verify(token, JWT_SECRET);
@@ -92,7 +87,6 @@ function verifyToken(token) {
     }
 }
 
-// Authentication middleware
 function authenticate(req, res, next) {
     const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -106,7 +100,6 @@ function authenticate(req, res, next) {
 
     req.userId = decoded.userId;
 
-    // Update lastSeen timestamp
     const user = users.find(u => u.id === req.userId);
     if (user) {
         user.lastSeen = new Date().toISOString();
@@ -116,9 +109,7 @@ function authenticate(req, res, next) {
     next();
 }
 
-// ==================== AUTH ROUTES ====================
 
-// Register
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, password, name } = req.body;
@@ -147,10 +138,10 @@ app.post('/api/auth/register', async (req, res) => {
         users.push(newUser);
         saveData();
 
-        // Add new user to global chat
+     
         let globalChat = chats.find(c => c.name === 'Barcha Foydalanuvchilar' && c.type === 'group');
         if (!globalChat) {
-            // Create global chat with all existing users + new user
+           
             globalChat = {
                 id: Date.now(),
                 type: 'group',
@@ -161,7 +152,7 @@ app.post('/api/auth/register', async (req, res) => {
             };
             chats.push(globalChat);
         } else {
-            // Add new user to existing global chat
+          
             if (!globalChat.participants.includes(newUser.id)) {
                 globalChat.participants.push(newUser.id);
             }
@@ -180,7 +171,6 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Login
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -215,7 +205,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Logout
+
 app.post('/api/auth/logout', authenticate, (req, res) => {
     const user = users.find(u => u.id === req.userId);
     if (user) {
@@ -226,7 +216,7 @@ app.post('/api/auth/logout', authenticate, (req, res) => {
     res.json({ success: true });
 });
 
-// Get current user
+
 app.get('/api/auth/me', authenticate, (req, res) => {
     const user = users.find(u => u.id === req.userId);
     if (!user) {
@@ -237,9 +227,7 @@ app.get('/api/auth/me', authenticate, (req, res) => {
     });
 });
 
-// ==================== USER ROUTES ====================
 
-// Get all users
 app.get('/api/users', authenticate, (req, res) => {
     const userList = users.map(u => ({
         id: u.id,
@@ -251,7 +239,7 @@ app.get('/api/users', authenticate, (req, res) => {
     res.json(userList);
 });
 
-// Update profile
+
 app.put('/api/users/profile', authenticate, (req, res) => {
     const user = users.find(u => u.id === req.userId);
     if (!user) {
@@ -269,15 +257,11 @@ app.put('/api/users/profile', authenticate, (req, res) => {
     });
 });
 
-// ==================== CHAT ROUTES ====================
-
-// Get user chats
 app.get('/api/chats', authenticate, (req, res) => {
     const userChats = chats.filter(c => c.participants.includes(req.userId));
     res.json(userChats);
 });
 
-// Create group chat
 app.post('/api/chats/group', authenticate, (req, res) => {
     const { name, participants } = req.body;
 
@@ -300,7 +284,7 @@ app.post('/api/chats/group', authenticate, (req, res) => {
     res.json(newChat);
 });
 
-// Get or create private chat
+
 app.post('/api/chats/private', authenticate, (req, res) => {
     const { userId } = req.body;
 
@@ -308,7 +292,7 @@ app.post('/api/chats/private', authenticate, (req, res) => {
         return res.status(400).json({ error: 'User ID is required' });
     }
 
-    // Check if private chat already exists
+   
     let existingChat = chats.find(c =>
         c.type === 'private' &&
         c.participants.includes(req.userId) &&
@@ -329,7 +313,7 @@ app.post('/api/chats/private', authenticate, (req, res) => {
     res.json(existingChat);
 });
 
-// Update chat
+
 app.put('/api/chats/:id', authenticate, (req, res) => {
     const chat = chats.find(c => c.id === parseInt(req.params.id));
     if (!chat) {
@@ -349,7 +333,7 @@ app.put('/api/chats/:id', authenticate, (req, res) => {
     res.json(chat);
 });
 
-// Delete chat
+
 app.delete('/api/chats/:id', authenticate, (req, res) => {
     const chatIndex = chats.findIndex(c => c.id === parseInt(req.params.id));
     if (chatIndex === -1) {
@@ -361,7 +345,7 @@ app.delete('/api/chats/:id', authenticate, (req, res) => {
         return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Remove chat and its messages
+  
     chats.splice(chatIndex, 1);
     messages = messages.filter(m => m.chatId !== chat.id);
     saveData();
@@ -369,7 +353,7 @@ app.delete('/api/chats/:id', authenticate, (req, res) => {
     res.json({ success: true });
 });
 
-// Add user to chat
+
 app.post('/api/chats/:id/users', authenticate, (req, res) => {
     const chat = chats.find(c => c.id === parseInt(req.params.id));
     if (!chat) {
@@ -389,7 +373,7 @@ app.post('/api/chats/:id/users', authenticate, (req, res) => {
     res.json(chat);
 });
 
-// Remove user from chat
+
 app.delete('/api/chats/:id/users/:userId', authenticate, (req, res) => {
     const chat = chats.find(c => c.id === parseInt(req.params.id));
     if (!chat) {
@@ -414,9 +398,7 @@ app.delete('/api/chats/:id/users/:userId', authenticate, (req, res) => {
     res.json(chat);
 });
 
-// ==================== MESSAGE ROUTES ====================
 
-// Get chat messages
 app.get('/api/chats/:id/messages', authenticate, (req, res) => {
     const chat = chats.find(c => c.id === parseInt(req.params.id));
     if (!chat) {
@@ -429,7 +411,6 @@ app.get('/api/chats/:id/messages', authenticate, (req, res) => {
 
     const chatMessages = messages.filter(m => m.chatId === parseInt(req.params.id));
 
-    // Mark messages as seen if sender is not the current user
     chatMessages.forEach(msg => {
         if (msg.senderId !== req.userId && msg.status !== 'seen') {
             msg.status = 'seen';
@@ -440,7 +421,7 @@ app.get('/api/chats/:id/messages', authenticate, (req, res) => {
     res.json(chatMessages);
 });
 
-// Send message
+
 app.post('/api/chats/:id/messages', authenticate, (req, res) => {
     const chat = chats.find(c => c.id === parseInt(req.params.id));
     if (!chat) {
@@ -456,11 +437,11 @@ app.post('/api/chats/:id/messages', authenticate, (req, res) => {
         return res.status(400).json({ error: 'Message text or attachment is required' });
     }
 
-    // Check if scheduled for future
+    
     if (scheduledFor) {
         const scheduledDate = new Date(scheduledFor);
         if (scheduledDate > new Date()) {
-            // Save as scheduled message
+            
             const newMessage = {
                 id: Date.now(),
                 chatId: chat.id,
@@ -477,7 +458,6 @@ app.post('/api/chats/:id/messages', authenticate, (req, res) => {
             messages.push(newMessage);
             saveData();
 
-            // Schedule sending
             const delay = scheduledDate - new Date();
             setTimeout(async () => {
                 const msgIndex = messages.findIndex(m => m.id === newMessage.id);
@@ -511,7 +491,7 @@ app.post('/api/chats/:id/messages', authenticate, (req, res) => {
     res.json(newMessage);
 });
 
-// Message reactions
+
 app.post('/api/messages/:id/reactions', authenticate, (req, res) => {
     const message = messages.find(m => m.id === parseInt(req.params.id));
     if (!message) {
@@ -525,14 +505,13 @@ app.post('/api/messages/:id/reactions', authenticate, (req, res) => {
     res.json(message);
 });
 
-// Pin message
+
 app.post('/api/messages/:id/pin', authenticate, (req, res) => {
     const message = messages.find(m => m.id === parseInt(req.params.id));
     if (!message) {
         return res.status(404).json({ error: 'Message not found' });
     }
 
-    // Unpin all other messages in this chat
     messages.forEach(m => {
         if (m.chatId === message.chatId) {
             m.pinned = false;
@@ -545,7 +524,7 @@ app.post('/api/messages/:id/pin', authenticate, (req, res) => {
     res.json(message);
 });
 
-// Unpin message
+
 app.post('/api/messages/:id/unpin', authenticate, (req, res) => {
     const message = messages.find(m => m.id === parseInt(req.params.id));
     if (!message) {
@@ -558,7 +537,7 @@ app.post('/api/messages/:id/unpin', authenticate, (req, res) => {
     res.json(message);
 });
 
-// Create channel
+
 app.post('/api/chats/channel', authenticate, (req, res) => {
     const { name } = req.body;
 
@@ -582,7 +561,7 @@ app.post('/api/chats/channel', authenticate, (req, res) => {
     res.json(newChannel);
 });
 
-// Update message
+
 app.put('/api/messages/:id', authenticate, (req, res) => {
     const message = messages.find(m => m.id === parseInt(req.params.id));
     if (!message) {
@@ -601,7 +580,7 @@ app.put('/api/messages/:id', authenticate, (req, res) => {
     res.json(message);
 });
 
-// Delete message
+
 app.delete('/api/messages/:id', authenticate, (req, res) => {
     const messageIndex = messages.findIndex(m => m.id === parseInt(req.params.id));
     if (messageIndex === -1) {
@@ -619,7 +598,6 @@ app.delete('/api/messages/:id', authenticate, (req, res) => {
     res.json({ success: true });
 });
 
-// ==================== SAMPLE DATA ====================
 
 async function loadSampleData() {
     if (users.length === 0) {
@@ -636,7 +614,7 @@ async function loadSampleData() {
 
 loadSampleData();
 
-// Start server
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Telegram Chat Server running on http://localhost:${PORT}`);
     console.log(`📁 Data saved to: ${DATA_DIR}`);
